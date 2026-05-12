@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rケア議事録">
+<meta name="theme-color" content="#2c5a2c">
+<title>Rケア 議事録AIツール</title>
+<style>
+:root{--bg:#fafaf7;--surface:#fff;--ink:#2c3e2e;--ink-soft:#5a6a5a;--line:#d4dcd4;--accent:#5a8c5a;--accent-soft:#e8efe4;--accent-deep:#2c5a2c;--ok:#2d7a3e;--warn:#b8860b;--err:#a83232}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;font-size:14px}
+header{background:var(--accent-deep);color:#fff;padding:14px 24px;display:flex;align-items:baseline;gap:14px;border-bottom:3px solid var(--accent)}
+header h1{margin:0;font-size:17px;letter-spacing:.06em;font-weight:600}
+header .sub{font-size:11px;opacity:.7}
+header .ver{font-size:10px;opacity:.5;margin-left:auto}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+.section{background:var(--surface);border:1px solid var(--line);padding:20px;margin-bottom:14px;border-radius:2px}
+.section h2{margin:0 0 12px;font-size:13px;letter-spacing:.08em;color:var(--accent-deep);border-bottom:1px solid var(--line);padding-bottom:8px;display:flex;align-items:center;gap:8px}
+.section h2::before{content:"";width:4px;height:14px;background:var(--accent);display:inline-block}
+.sn{background:var(--accent);color:#fff;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border-radius:2px;margin-right:6px}
+label{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;font-weight:600}
+input[type=text],input[type=password],input[type=date],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);background:var(--bg);font-family:inherit;font-size:13px;color:var(--ink);border-radius:2px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;background:#fff}
+textarea{resize:vertical}
+button{background:var(--ink);color:#fff;border:none;padding:9px 18px;font-family:inherit;font-size:12px;letter-spacing:.05em;cursor:pointer;transition:all .15s;border-radius:2px}
+button:hover:not(:disabled){background:var(--accent)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--accent)}
+button.primary:hover:not(:disabled){background:var(--accent-deep)}
+button.sm{padding:5px 12px;font-size:11px}
+.form-row{display:flex;gap:6px;align-items:flex-end}
+.form-row>div{flex:1}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.participants{display:flex;gap:12px;flex-wrap:wrap}
+.participants label{display:inline-flex;align-items:center;gap:4px;font-weight:normal;cursor:pointer;font-size:13px;color:var(--ink)}
+.status{padding:10px 14px;margin-top:10px;font-size:12px;border-left:3px solid;border-radius:2px}
+.status.info{background:#e8f0f7;border-color:#3b7bc4;color:#1e4975}
+.status.success{background:#e8f5ea;border-color:var(--ok);color:#1e5028}
+.status.error{background:#fbeaea;border-color:var(--err);color:#7a2020}
+.hint{font-size:10px;color:var(--ink-soft);margin-top:4px}
+.hint a{color:var(--accent)}
+.todo-card{border:1px solid var(--line);background:var(--bg);padding:10px 12px;margin-bottom:8px;border-radius:2px}
+.todo-card .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+.todo-card .title{flex:1;font-weight:600;font-size:13px}
+.todo-card .grid{display:grid;grid-template-columns:1fr 1fr 1fr 30px;gap:6px;align-items:end}
+.todo-card .remove{background:var(--err);width:28px;padding:6px 0;text-align:center;font-size:11px}
+.todo-card .remove:hover{background:#7a2020}
+.loader{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-right:6px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{text-align:center;padding:16px;font-size:10px;color:var(--ink-soft)}
+
+/* ============ スマホ対応 ============ */
+@media (max-width: 768px) {
+  body { font-size: 15px; }
+  header { padding: 10px 14px; flex-wrap: wrap; gap: 6px }
+  header h1 { font-size: 15px }
+  header .sub { display: none }
+  header .ver { font-size: 9px }
+  .container { padding: 10px }
+  .section { padding: 14px; margin-bottom: 10px }
+  .section h2 { font-size: 12px }
+
+  /* 入力フィールド大型化（タップしやすく） */
+  input[type=text], input[type=password], input[type=date], textarea, select {
+    font-size: 16px; /* iOSの自動ズーム防止 */
+    padding: 12px;
+    min-height: 44px;
+  }
+  textarea { min-height: 100px }
+  button { padding: 12px 18px; font-size: 14px; min-height: 44px }
+  button.sm { padding: 9px 14px; font-size: 12px; min-height: 36px }
+
+  /* フォームグリッドを1カラムに */
+  .form-grid { grid-template-columns: 1fr; gap: 10px }
+  .form-row { flex-direction: column; align-items: stretch; gap: 8px }
+  .form-row > div { width: 100% }
+
+  /* 参加者チェックを横並びキープ */
+  .participants { gap: 14px }
+  .participants label { padding: 8px 4px; font-size: 14px }
+  .participants input[type=checkbox] { width: 20px; height: 20px }
+
+  /* TODOカードを縦スタックに */
+  .todo-card .grid { grid-template-columns: 1fr; gap: 8px }
+  .todo-card .grid select, .todo-card .grid input[type=date] { width: 100% }
+  .todo-card .remove { width: 100%; padding: 10px; font-size: 13px }
+  .todo-card .head input.title { font-size: 14px; padding: 8px; border: 1px solid var(--line)!important; background: #fff!important; border-radius: 4px }
+}
+
+/* タブレット中間 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .form-grid { grid-template-columns: 1fr 1fr }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Rケア 議事録AIツール</h1>
+  <span class="sub">MINUTES AI PROCESSOR</span>
+  <span class="ver">v1.2 — スマホ対応・シークレット認証</span>
+</header>
+
+<div class="container">
+
+<!-- 設定 -->
+<div class="section">
+  <h2><span class="sn">1</span>設定（最初に1回だけ）</h2>
+  <div class="form-row" style="margin-bottom:10px">
+    <div><label>Claude APIキー</label><input type="password" id="apiKey" placeholder="sk-ant-api03-..."></div>
+    <button class="sm" onclick="saveKey('apiKey','rcare_minutes_api')">保存</button>
+  </div>
+  <div class="form-row" style="margin-bottom:10px">
+    <div><label>GAS Web App URL（Notionプロキシ）</label><input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
+    <button class="sm" onclick="saveKey('gasUrl','rcare_minutes_gas')">保存</button>
+  </div>
+  <div class="form-row" style="margin-bottom:10px">
+    <div><label>シークレットキー（任意・推奨）</label><input type="password" id="appSecret" placeholder="GAS側で設定したシークレットと一致させる"></div>
+    <button class="sm" onclick="saveKey('appSecret','rcare_minutes_secret')">保存</button>
+  </div>
+  <div class="hint">※Notionトークンはツールには入力しません。GAS側に保存されます（より安全）<br>※GitHub Pagesで公開する場合、シークレットキーを設定すると不正アクセスを防げます。GAS側スクリプトプロパティ「APP_SECRET」と同じ値を入れてください。</div>
+  <div class="form-grid" style="margin-top:10px">
+    <div><label>議事録DB ID</label><input type="text" id="minutesDbId" value="48f71da5476e478dbfda82be446fc92e"></div>
+    <div><label>TODO DB ID</label><input type="text" id="todoDbId" value="aa1eb7a771344d1897feee1b2a0640f1"></div>
+    <div style="display:flex;align-items:flex-end;gap:6px">
+      <button class="sm" onclick="saveDbIds()">保存</button>
+      <button class="sm" onclick="testConnection()">🔌 接続テスト</button>
+    </div>
+  </div>
+  <div id="setupStatus"></div>
+</div>
+
+<!-- 議事録入力 -->
+<div class="section">
+  <h2><span class="sn">2</span>議事録の入力</h2>
+  <div class="form-grid" style="margin-bottom:12px">
+    <div><label>タイトル <span style="color:var(--err)">*</span></label><input type="text" id="title" placeholder="例: 2026/05/12 週次MTG"></div>
+    <div><label>開催日 <span style="color:var(--err)">*</span></label><input type="date" id="date"></div>
+    <div>
+      <label>参加者</label>
+      <div class="participants">
+        <label><input type="checkbox" id="p_president" checked>社長</label>
+        <label><input type="checkbox" id="p_mgrA" checked>管理者A</label>
+        <label><input type="checkbox" id="p_mgrB" checked>管理者B</label>
+      </div>
+    </div>
+  </div>
+  <label>文字起こし原文（Xiaomiからコピペ） <span style="color:var(--err)">*</span></label>
+  <textarea id="transcript" rows="12" placeholder="ここに文字起こしを貼り付け..."></textarea>
+  <div style="margin-top:10px"><button class="primary" id="aiBtn" onclick="runAI()">🤖 AI処理を実行（要約・決定事項・TODO抽出）</button></div>
+  <div id="aiStatus"></div>
+</div>
+
+<!-- AI結果 -->
+<div class="section" id="resultSec" style="display:none">
+  <h2><span class="sn">3</span>AI処理結果（確認・編集）</h2>
+  <div style="margin-bottom:12px">
+    <label>議事録（要約）</label>
+    <textarea id="r_summary" rows="6"></textarea>
+  </div>
+  <div style="margin-bottom:12px">
+    <label>決定事項</label>
+    <textarea id="r_decisions" rows="4"></textarea>
+  </div>
+  <div style="margin-bottom:12px">
+    <label>次回までの宿題</label>
+    <textarea id="r_homework" rows="3"></textarea>
+  </div>
+  <div>
+    <label>TODO候補（担当者・期限を編集できます）</label>
+    <div id="todoList"></div>
+    <button class="sm" onclick="addTodo()" style="margin-top:6px">+ TODOを追加</button>
+  </div>
+</div>
+
+<!-- 保存 -->
+<div class="section" id="saveSec" style="display:none">
+  <h2><span class="sn">4</span>Notionに保存</h2>
+  <p style="font-size:12px;color:var(--ink-soft)">議事録DBに新規ページを作成し、TODO候補をTODO DBに自動追加します。</p>
+  <button class="primary" id="saveBtn" onclick="saveToNotion()">📤 Notionに保存</button>
+  <div id="saveStatus"></div>
+</div>
+
+</div>
+
+<footer>Rケア 議事録AIツール v1.2 / スマホ対応・シークレット認証 / Claude API × GAS × Notion API</footer>
+
+<script>
+let todoCandidates = [];
+
+window.addEventListener('load', () => {
+  document.getElementById('apiKey').value = localStorage.getItem('rcare_minutes_api') || '';
+  document.getElementById('gasUrl').value = localStorage.getItem('rcare_minutes_gas') || '';
+  document.getElementById('appSecret').value = localStorage.getItem('rcare_minutes_secret') || '';
+  const dbIds = JSON.parse(localStorage.getItem('rcare_minutes_dbs') || '{}');
+  if (dbIds.minutes) document.getElementById('minutesDbId').value = dbIds.minutes;
+  if (dbIds.todo) document.getElementById('todoDbId').value = dbIds.todo;
+  document.getElementById('date').value = new Date().toISOString().slice(0,10);
+});
+
+function saveKey(inputId, lsKey) {
+  const v = document.getElementById(inputId).value.trim();
+  if (!v) {
+    // シークレットキーは空でも保存可能（認証OFFにする用途）
+    if (lsKey === 'rcare_minutes_secret') {
+      localStorage.setItem(lsKey, '');
+      setStatus('setupStatus', '✓ シークレットキーをクリアしました', 'success');
+      return;
+    }
+    setStatus('setupStatus', '値を入力してください', 'error'); return;
+  }
+  localStorage.setItem(lsKey, v);
+  setStatus('setupStatus', '✓ 保存しました', 'success');
+}
+function saveDbIds() {
+  const minutes = document.getElementById('minutesDbId').value.trim();
+  const todo = document.getElementById('todoDbId').value.trim();
+  localStorage.setItem('rcare_minutes_dbs', JSON.stringify({minutes, todo}));
+  setStatus('setupStatus', '✓ DB IDを保存しました', 'success');
+}
+
+async function callGas(action, data = {}) {
+  const gasUrl = localStorage.getItem('rcare_minutes_gas');
+  if (!gasUrl) throw new Error('GAS URL未設定');
+  const payload = Object.assign({action}, data);
+  const secret = localStorage.getItem('rcare_minutes_secret');
+  if (secret) payload.secret = secret;
+  // GAS Web AppはCORS安全（プレーンPOSTでtext/plain指定）
+  const res = await fetch(gasUrl, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('GAS応答エラー: ' + res.status);
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'エラー発生');
+  return result;
+}
+
+async function testConnection() {
+  const minutesDb = document.getElementById('minutesDbId').value.trim();
+  const todoDb = document.getElementById('todoDbId').value.trim();
+  if (!minutesDb || !todoDb) { setStatus('setupStatus', 'DB IDを入力してください', 'error'); return; }
+  setStatus('setupStatus', '接続テスト中...', 'info');
+  try {
+    const r = await callGas('testConnection', {minutesDbId: minutesDb, todoDbId: todoDb});
+    if (r.results.minutesDb.ok && r.results.todoDb.ok) {
+      setStatus('setupStatus', '✓ Notion接続成功（議事録DB・TODO DB両方OK）', 'success');
+    } else {
+      let msg = '接続エラー: ';
+      if (!r.results.minutesDb.ok) msg += `議事録DB: ${r.results.minutesDb.error} `;
+      if (!r.results.todoDb.ok) msg += `TODO DB: ${r.results.todoDb.error}`;
+      setStatus('setupStatus', msg, 'error');
+    }
+  } catch (e) {
+    setStatus('setupStatus', 'エラー: ' + e.message, 'error');
+  }
+}
+
+async function callClaude(prompt) {
+  const key = localStorage.getItem('rcare_minutes_api');
+  if (!key) throw new Error('Claude APIキー未設定');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 4096,
+      messages: [{role:'user', content: prompt}]
+    })
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(`Claude API ${res.status}: ${e.slice(0,200)}`); }
+  const data = await res.json();
+  return data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+}
+
+async function runAI() {
+  const transcript = document.getElementById('transcript').value.trim();
+  if (!transcript) { setStatus('aiStatus', '文字起こしを貼り付けてください', 'error'); return; }
+  if (transcript.length < 50) { setStatus('aiStatus', '文字起こしが短すぎます', 'error'); return; }
+
+  const btn = document.getElementById('aiBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span>AI処理中...（30秒〜1分）';
+  setStatus('aiStatus', 'Claude AIが議事録を分析中...', 'info');
+
+  const participants = [];
+  if (document.getElementById('p_president').checked) participants.push('社長');
+  if (document.getElementById('p_mgrA').checked) participants.push('管理者A');
+  if (document.getElementById('p_mgrB').checked) participants.push('管理者B');
+
+  const prompt = `あなたは介護事業者「Rケア」の議事録作成アシスタントです。以下の会議の文字起こしを分析し、構造化された議事録を作成してください。
+
+# 参加者
+${participants.join('、')}
+
+# 文字起こし原文
+${transcript}
+
+# 出力形式（厳密にこの形式で）
+
+==SUMMARY==
+（議事録要約：会議全体の要点を箇条書きで5〜10項目程度。主要な議題ごとに整理）
+
+==DECISIONS==
+（決定事項：会議で明確に決まったことを箇条書きで。なければ「特になし」）
+
+==HOMEWORK==
+(次回までの宿題：次回会議までに全員で取り組むべきことを箇条書きで。なければ「特になし」)
+
+==TODOS==
+（TODO候補：個別アクションをJSON形式で出力。担当者は文字起こしから推測。期限は文字起こしに明記があれば使う、なければ null）
+
+[
+  {"内容": "...", "担当者": "社長|管理者A|管理者B|未定", "期限": "YYYY-MM-DD or null", "優先度": "高|中|低"},
+  ...
+]
+
+# 注意
+- 議事録は事実ベースで、推測や創作を含めない
+- TODOの担当者が文字起こしから推測できない場合は「未定」とする
+- 期限が明示されていない場合はnullとする
+- JSONは厳密に整形する（最後の要素にカンマを付けない）`;
+
+  try {
+    const text = await callClaude(prompt);
+    parseAndDisplay(text);
+    document.getElementById('resultSec').style.display = 'block';
+    document.getElementById('saveSec').style.display = 'block';
+    setStatus('aiStatus', '✓ AI処理完了。内容を確認・編集してください', 'success');
+    document.getElementById('resultSec').scrollIntoView({behavior:'smooth'});
+  } catch (e) {
+    setStatus('aiStatus', 'エラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 AI処理を実行（要約・決定事項・TODO抽出）';
+  }
+}
+
+function parseAndDisplay(text) {
+  const sections = {};
+  const blocks = text.split(/==(SUMMARY|DECISIONS|HOMEWORK|TODOS)==/);
+  for (let i = 1; i < blocks.length; i += 2) {
+    sections[blocks[i].trim()] = (blocks[i+1] || '').trim();
+  }
+  document.getElementById('r_summary').value = sections.SUMMARY || '';
+  document.getElementById('r_decisions').value = sections.DECISIONS || '';
+  document.getElementById('r_homework').value = sections.HOMEWORK || '';
+  todoCandidates = [];
+  if (sections.TODOS) {
+    try {
+      const jsonMatch = sections.TODOS.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        todoCandidates = JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('TODO parse error:', e);
+    }
+  }
+  renderTodos();
+}
+
+function renderTodos() {
+  const list = document.getElementById('todoList');
+  if (todoCandidates.length === 0) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--ink-soft);padding:8px">TODOがありません</p>';
+    return;
+  }
+  list.innerHTML = todoCandidates.map((t, i) => `
+    <div class="todo-card">
+      <div class="head">
+        <input type="text" class="title" value="${esc(t['内容']||'')}" onchange="todoCandidates[${i}]['内容']=this.value" style="border:none;background:transparent;outline:none;padding:0">
+      </div>
+      <div class="grid">
+        <select onchange="todoCandidates[${i}]['担当者']=this.value">
+          <option value="未定" ${t['担当者']==='未定'?'selected':''}>担当者未定</option>
+          <option value="社長" ${t['担当者']==='社長'?'selected':''}>社長</option>
+          <option value="管理者A" ${t['担当者']==='管理者A'?'selected':''}>管理者A</option>
+          <option value="管理者B" ${t['担当者']==='管理者B'?'selected':''}>管理者B</option>
+        </select>
+        <input type="date" value="${t['期限']&&t['期限']!=='null'?t['期限']:''}" onchange="todoCandidates[${i}]['期限']=this.value||null">
+        <select onchange="todoCandidates[${i}]['優先度']=this.value">
+          <option value="高" ${t['優先度']==='高'?'selected':''}>優先度: 高</option>
+          <option value="中" ${(!t['優先度']||t['優先度']==='中')?'selected':''}>優先度: 中</option>
+          <option value="低" ${t['優先度']==='低'?'selected':''}>優先度: 低</option>
+        </select>
+        <button class="remove" onclick="removeTodo(${i})" title="削除">×</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addTodo() {
+  todoCandidates.push({内容:'', 担当者:'未定', 期限:null, 優先度:'中'});
+  renderTodos();
+}
+
+function removeTodo(i) {
+  todoCandidates.splice(i, 1);
+  renderTodos();
+}
+
+async function saveToNotion() {
+  const title = document.getElementById('title').value.trim();
+  const date = document.getElementById('date').value;
+  if (!title || !date) { setStatus('saveStatus', 'タイトルと開催日を入力してください', 'error'); return; }
+
+  const gasUrl = localStorage.getItem('rcare_minutes_gas');
+  if (!gasUrl) { setStatus('saveStatus', 'GAS URLが未設定です', 'error'); return; }
+  const minutesDb = document.getElementById('minutesDbId').value.trim();
+  const todoDb = document.getElementById('todoDbId').value.trim();
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span>保存中...';
+
+  const participants = [];
+  if (document.getElementById('p_president').checked) participants.push('社長');
+  if (document.getElementById('p_mgrA').checked) participants.push('管理者A');
+  if (document.getElementById('p_mgrB').checked) participants.push('管理者B');
+
+  try {
+    // 1. 議事録ページ作成
+    setStatus('saveStatus', '議事録を保存中...', 'info');
+    const minutesProps = {
+      'タイトル': { title: [{text:{content:title}}] },
+      '開催日': { date: {start: date} },
+      '参加者': { multi_select: participants.map(p => ({name:p})) },
+      'ステータス': { select: {name:'完了'} },
+      '文字起こし原文': { rich_text: chunkText(document.getElementById('transcript').value) },
+      '議事録（要約）': { rich_text: chunkText(document.getElementById('r_summary').value) },
+      '決定事項': { rich_text: chunkText(document.getElementById('r_decisions').value) },
+      '次回までの宿題': { rich_text: chunkText(document.getElementById('r_homework').value) }
+    };
+    const minutesResult = await callGas('createPage', {databaseId: minutesDb, properties: minutesProps});
+    const minutesPageId = minutesResult.pageId;
+
+    // 2. TODOを作成
+    let todoSuccess = 0;
+    let todoErrors = [];
+    for (let i = 0; i < todoCandidates.length; i++) {
+      const todo = todoCandidates[i];
+      if (!todo['内容']) continue;
+      setStatus('saveStatus', `TODO ${i+1}/${todoCandidates.length} を保存中...`, 'info');
+      try {
+        const props = {
+          'TODO内容': { title: [{text:{content:todo['内容']}}] },
+          'ステータス': { select: {name:'未着手'} },
+          '優先度': { select: {name: todo['優先度'] || '中'} },
+          '元議事録': { relation: [{id: minutesPageId}] }
+        };
+        if (todo['担当者'] && todo['担当者'] !== '未定') {
+          props['担当者'] = { select: {name: todo['担当者']} };
+        }
+        if (todo['期限'] && todo['期限'] !== 'null') {
+          props['期限'] = { date: {start: todo['期限']} };
+        }
+        await callGas('createPage', {databaseId: todoDb, properties: props});
+        todoSuccess++;
+      } catch (e) {
+        console.error('TODO作成エラー:', e);
+        todoErrors.push(`${todo['内容']}: ${e.message}`);
+      }
+    }
+
+    let msg = `✓ 議事録保存完了 / TODO ${todoSuccess}件を追加しました`;
+    if (todoErrors.length > 0) {
+      msg += ` （${todoErrors.length}件失敗）`;
+    }
+    setStatus('saveStatus', msg, 'success');
+  } catch (e) {
+    setStatus('saveStatus', 'エラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📤 Notionに保存';
+  }
+}
+
+function chunkText(text) {
+  if (!text) return [{text:{content:''}}];
+  const chunks = [];
+  let s = text;
+  while (s.length > 2000) {
+    chunks.push({text:{content: s.slice(0, 2000)}});
+    s = s.slice(2000);
+  }
+  if (s) chunks.push({text:{content: s}});
+  return chunks;
+}
+
+function setStatus(id, msg, type) {
+  document.getElementById(id).innerHTML = `<div class="status ${type}">${esc(msg)}</div>`;
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+</script>
+
+</body>
+</html>

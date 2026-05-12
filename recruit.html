@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rケア採用">
+<meta name="theme-color" content="#2c5a2c">
+<title>Rケア 採用管理システム</title>
+<style>
+:root{--bg:#fafaf7;--surface:#fff;--ink:#2c3e2e;--ink-soft:#5a6a5a;--line:#d4dcd4;--accent:#5a8c5a;--accent-soft:#e8efe4;--accent-deep:#2c5a2c;--ok:#2d7a3e;--warn:#b8860b;--err:#a83232}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;font-size:14px}
+header{background:var(--accent-deep);color:#fff;padding:14px 24px;display:flex;align-items:baseline;gap:14px;border-bottom:3px solid var(--accent)}
+header h1{margin:0;font-size:17px;letter-spacing:.06em;font-weight:600}
+header .sub{font-size:11px;opacity:.7}
+header .ver{font-size:10px;opacity:.5;margin-left:auto}
+.container{max-width:1300px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--accent);margin-bottom:20px;background:var(--surface);padding:4px 4px 0}
+.tab-btn{padding:10px 20px;background:var(--bg);border:1px solid var(--line);border-bottom:none;cursor:pointer;font-size:12px;color:var(--ink-soft);font-family:inherit;letter-spacing:.05em}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);margin-bottom:-2px;padding-bottom:12px;font-weight:600}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.section{background:var(--surface);border:1px solid var(--line);padding:20px;margin-bottom:14px;border-radius:2px}
+.section h2{margin:0 0 12px;font-size:13px;letter-spacing:.08em;color:var(--accent-deep);border-bottom:1px solid var(--line);padding-bottom:8px;display:flex;align-items:center;gap:8px}
+.section h2::before{content:"";width:4px;height:14px;background:var(--accent);display:inline-block}
+label{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;font-weight:600}
+input[type=text],input[type=password],input[type=date],input[type=email],input[type=tel],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);background:var(--bg);font-family:inherit;font-size:13px;color:var(--ink);border-radius:2px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;background:#fff}
+textarea{min-height:60px;resize:vertical}
+button{background:var(--ink);color:#fff;border:none;padding:9px 18px;font-family:inherit;font-size:12px;letter-spacing:.05em;cursor:pointer;transition:all .15s;border-radius:2px}
+button:hover:not(:disabled){background:var(--accent)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--accent)}
+button.primary:hover:not(:disabled){background:var(--accent-deep)}
+button.sm{padding:5px 10px;font-size:10px}
+button.danger{background:var(--err)}
+button.danger:hover:not(:disabled){background:#7a2020}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.status{padding:10px 14px;margin-top:10px;font-size:12px;border-left:3px solid;border-radius:2px}
+.status.info{background:#e8f0f7;border-color:#3b7bc4;color:#1e4975}
+.status.success{background:#e8f5ea;border-color:var(--ok);color:#1e5028}
+.status.error{background:#fbeaea;border-color:var(--err);color:#7a2020}
+.hint{font-size:10px;color:var(--ink-soft);margin-top:4px}
+.list-table{width:100%;border-collapse:collapse;font-size:12px}
+.list-table th{background:var(--accent);color:#fff;padding:8px 10px;text-align:left;font-weight:500;letter-spacing:.04em}
+.list-table td{padding:8px 10px;border-bottom:1px solid var(--line);background:#fff}
+.list-table tr:hover td{background:var(--accent-soft);cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;font-size:10px;border-radius:2px;color:#fff}
+.badge.s-未対応{background:var(--err)}
+.badge.s-返信待ち{background:var(--warn)}
+.badge.s-面接調整中{background:#3b7bc4}
+.badge.s-面接予定{background:#3b7bc4}
+.badge.s-面接済み{background:#5a8c5a}
+.badge.s-採用予定{background:#2d7a3e}
+.badge.s-採用{background:var(--accent-deep)}
+.badge.s-辞退{background:#8a8a8a}
+.badge.s-不採用{background:#666}
+.badge.s-保留{background:#a87a4a}
+.filter-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.filter-row.tight{grid-template-columns:repeat(6,1fr)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
+.detail-block{background:var(--bg);padding:14px 16px;border:1px solid var(--line);border-radius:2px}
+.detail-block h3{margin:0 0 10px;font-size:11px;color:var(--accent-deep);letter-spacing:.1em;border-bottom:1px solid var(--line);padding-bottom:6px}
+.detail-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px dashed var(--line)}
+.detail-row:last-child{border-bottom:none}
+.detail-row .l{color:var(--ink-soft);font-weight:600;min-width:90px}
+.detail-row .v{flex:1;text-align:right}
+.status-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+@media(max-width:700px){.status-actions{grid-template-columns:repeat(3,1fr)}}
+.status-btn{padding:8px;font-size:11px;background:var(--surface);color:var(--ink);border:1px solid var(--line);cursor:pointer;border-radius:2px;text-align:center}
+.status-btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+.history-item{padding:10px 12px;border-left:3px solid var(--accent);background:var(--surface);margin-bottom:6px;border-radius:2px}
+.history-head{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-bottom:4px}
+.history-content{font-size:12px}
+.history-status-change{font-size:10px;color:var(--accent-deep);margin-top:4px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-content{background:#fff;padding:24px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;border-radius:2px}
+.modal-content h3{margin:0 0 12px;color:var(--accent-deep);border-bottom:1px solid var(--line);padding-bottom:8px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.required{color:var(--err);margin-left:2px}
+.empty{padding:32px;text-align:center;color:var(--ink-soft);font-size:12px;background:var(--bg);border:1px dashed var(--line)}
+footer{text-align:center;padding:16px;font-size:10px;color:var(--ink-soft)}
+
+/* ============ スマホ対応 ============ */
+@media (max-width: 768px) {
+  body { font-size: 15px; }
+  header { padding: 10px 14px; flex-wrap: wrap; gap: 6px }
+  header h1 { font-size: 15px }
+  header .sub { display: none }
+  header .ver { font-size: 9px }
+  .container { padding: 10px }
+  .section { padding: 14px; margin-bottom: 10px }
+  .section h2 { font-size: 12px }
+
+  /* タブを横スクロール可能に */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding: 4px }
+  .tab-btn { white-space: nowrap; padding: 12px 16px; font-size: 13px; flex-shrink: 0 }
+
+  /* 入力フィールド大型化（タップしやすく） */
+  input[type=text], input[type=password], input[type=date], input[type=email], input[type=tel], textarea, select {
+    font-size: 16px; /* iOSの自動ズーム防止 */
+    padding: 12px;
+    min-height: 44px;
+  }
+  textarea { min-height: 80px }
+  button { padding: 12px 18px; font-size: 14px; min-height: 44px }
+  button.sm { padding: 9px 14px; font-size: 12px; min-height: 36px }
+
+  /* フォームグリッドを1カラムに */
+  .form-grid { grid-template-columns: 1fr; gap: 10px }
+  .form-grid .full { grid-column: auto }
+
+  /* フィルタを縦並びに */
+  .filter-row, .filter-row.tight { grid-template-columns: 1fr 1fr; gap: 8px }
+
+  /* 一覧テーブルをカード表示に変身させる */
+  .list-table { font-size: 13px }
+  .list-table thead { display: none }
+  .list-table tbody tr { display: block; margin-bottom: 10px; background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 8px }
+  .list-table tbody tr:hover td { background: transparent }
+  .list-table td { display: flex; justify-content: space-between; padding: 4px 6px; border-bottom: 1px dotted var(--line); background: transparent }
+  .list-table td:last-child { border-bottom: none }
+  .list-table td::before { content: attr(data-label); font-weight: 600; color: var(--ink-soft); margin-right: 8px; flex-shrink: 0 }
+
+  /* 詳細グリッドを1カラムに */
+  .detail-grid { grid-template-columns: 1fr; gap: 14px }
+  .detail-row { flex-direction: column; gap: 2px }
+  .detail-row .v { text-align: left }
+  .detail-row .l { min-width: auto; font-size: 11px }
+
+  /* ステータスボタンを3列に */
+  .status-actions { grid-template-columns: repeat(2, 1fr); gap: 8px }
+  .status-btn { padding: 12px; font-size: 13px; min-height: 44px }
+
+  /* モーダルをフルスクリーンに */
+  .modal-content { width: 96%; max-width: none; max-height: 95vh; padding: 16px; margin: 2vh auto }
+
+  /* 履歴表示 */
+  .history-item { padding: 10px }
+  .history-head { flex-direction: column; gap: 2px }
+}
+
+/* タブレット中間 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .form-grid { grid-template-columns: 1fr 1fr }
+  .filter-row.tight { grid-template-columns: repeat(3, 1fr) }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Rケア 採用管理システム</h1>
+  <span class="sub">RECRUIT MANAGEMENT</span>
+  <span class="ver">PHASE 1 v1.1 — スマホ対応・シークレット認証</span>
+</header>
+
+<div class="container">
+
+<!-- タブ -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('register')">応募者登録</button>
+  <button class="tab-btn" onclick="switchTab('list')">応募者一覧</button>
+  <button class="tab-btn" onclick="switchTab('settings')">設定</button>
+</div>
+
+<!-- 応募者登録 -->
+<div class="tab-pane active" id="tab-register">
+  <div class="section">
+    <h2>新規応募者の登録</h2>
+    <div class="form-grid">
+      <div><label>応募日 <span class="required">*</span></label><input type="date" id="r_date"></div>
+      <div><label>媒体 <span class="required">*</span></label><select id="r_media"></select></div>
+      <div><label>氏名 <span class="required">*</span></label><input type="text" id="r_name" placeholder="山田 太郎"></div>
+      <div><label>電話番号</label><input type="tel" id="r_phone" placeholder="090-1234-5678"></div>
+      <div><label>メール</label><input type="email" id="r_email"></div>
+      <div><label>応募職種</label><select id="r_job"></select></div>
+      <div><label>雇用形態</label><select id="r_employment"></select></div>
+      <div><label>資格</label><select id="r_qualification"></select></div>
+      <div><label>経験年数</label><input type="text" id="r_experience" placeholder="3年"></div>
+      <div><label>希望勤務</label><input type="text" id="r_wish" placeholder="日勤希望"></div>
+      <div><label>求人ID</label><input type="text" id="r_jobid" placeholder="kofu-hh-001"></div>
+      <div></div>
+      <div class="full"><label>メモ</label><textarea id="r_memo" placeholder="自由記述"></textarea></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="primary" onclick="registerApplicant()">📝 応募者を登録</button>
+      <button onclick="resetRegisterForm()">クリア</button>
+    </div>
+    <div id="r_status"></div>
+  </div>
+</div>
+
+<!-- 応募者一覧 -->
+<div class="tab-pane" id="tab-list">
+  <div class="section">
+    <h2>応募者一覧</h2>
+    <div class="filter-row tight">
+      <input type="text" id="f_name" placeholder="氏名検索" oninput="applyFilter()">
+      <select id="f_media" onchange="applyFilter()"><option value="">全媒体</option></select>
+      <select id="f_status" onchange="applyFilter()"><option value="">全ステータス</option></select>
+      <select id="f_job" onchange="applyFilter()"><option value="">全職種</option></select>
+      <select id="f_employment" onchange="applyFilter()"><option value="">全雇用形態</option></select>
+      <select id="f_qualification" onchange="applyFilter()"><option value="">全資格</option></select>
+    </div>
+    <div class="filter-row" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div><label>応募日(から)</label><input type="date" id="f_date_from" onchange="applyFilter()"></div>
+      <div><label>応募日(まで)</label><input type="date" id="f_date_to" onchange="applyFilter()"></div>
+      <div style="display:flex;align-items:flex-end;gap:8px"><label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="f_unhandled" onchange="applyFilter()">未対応のみ</label></div>
+      <div style="display:flex;align-items:flex-end;gap:8px"><label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="f_interview" onchange="applyFilter()">面接予定のみ</label></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--ink-soft)" id="listInfo"></span>
+      <button class="sm" onclick="loadApplicants()">🔄 再読込</button>
+    </div>
+    <div id="listContainer"></div>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div class="tab-pane" id="tab-settings">
+  <div class="section">
+    <h2>GAS連携設定</h2>
+    <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">
+      <div style="flex:1"><label>Google Apps Script Web App URL</label><input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
+      <button class="sm" onclick="saveGasUrl()">保存</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">
+      <div style="flex:1"><label>シークレットキー（任意・推奨）</label><input type="password" id="appSecret" placeholder="GAS側で設定したシークレットと一致させる"></div>
+      <button class="sm" onclick="saveSecret()">保存</button>
+    </div>
+    <div class="hint">GitHub Pagesで公開する場合、シークレットキーを設定すると不正アクセスを防げます。<br>GAS側スクリプトプロパティ「APP_SECRET」と同じ値を入れてください。</div>
+    <div id="gasStatus"></div>
+    <div style="margin-top:14px"><button onclick="setupSheets()">📋 スプレッドシート初期化（最初の1回だけ実行）</button><div class="hint">7つのシート（01_応募者〜07_マスター）を自動作成します。すでにシートがある場合はスキップされます。</div></div>
+    <div id="setupStatus"></div>
+  </div>
+  <div class="section">
+    <h2>マスター更新</h2>
+    <div class="hint">スプレッドシートの「07_マスター」シートを直接編集した後、「マスター再読込」を押してください。</div>
+    <button class="sm" onclick="loadMasters()">🔄 マスター再読込</button>
+    <div id="masterStatus"></div>
+  </div>
+</div>
+
+</div>
+
+<!-- 応募者詳細モーダル -->
+<div class="modal" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-content" style="max-width:900px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 id="d_title" style="margin:0;border:none;padding:0">応募者詳細</h3>
+      <button class="sm" onclick="closeDetail()">閉じる</button>
+    </div>
+    <div id="d_body"></div>
+  </div>
+</div>
+
+<!-- ステータス変更モーダル -->
+<div class="modal" id="statusModal" onclick="if(event.target===this)closeStatusModal()">
+  <div class="modal-content">
+    <h3 id="sm_title">ステータス変更</h3>
+    <div id="sm_body">
+      <div><label>対応内容（メモ）</label><textarea id="sm_note" placeholder="例：本人と電話、面接日程を5/10で調整"></textarea></div>
+      <div style="margin-top:10px"><label>担当者</label><select id="sm_staff"></select></div>
+      <div style="margin-top:10px"><label>次回対応日（任意）</label><input type="date" id="sm_nextdate"></div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeStatusModal()">キャンセル</button>
+      <button class="primary" onclick="confirmStatusChange()">確定</button>
+    </div>
+  </div>
+</div>
+
+<footer>Rケア 採用管理システム v1.1 / PHASE 1 (応募者管理) / スマホ対応・シークレット認証</footer>
+
+<script>
+// ============================================
+// 状態
+// ============================================
+let masters = {};
+let applicants = [];
+let currentDetail = null;
+let pendingStatusChange = null;
+
+// ============================================
+// 初期化
+// ============================================
+window.addEventListener('load', () => {
+  loadGasUrl();
+  document.getElementById('r_date').value = new Date().toISOString().slice(0,10);
+  if (window._gasUrl) { loadMasters(); loadApplicants(); }
+});
+
+// ============================================
+// タブ切り替え
+// ============================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'list') loadApplicants();
+}
+
+// ============================================
+// GAS URL・シークレット管理
+// ============================================
+function saveGasUrl() {
+  const u = document.getElementById('gasUrl').value.trim();
+  if (!u || !u.startsWith('https://script.google.com/')) {
+    setStatus('gasStatus','正しいGAS URLを入力してください','error'); return;
+  }
+  try{localStorage.setItem('rcare_apt_gas_url',u)}catch(e){}
+  window._gasUrl = u;
+  setStatus('gasStatus','✓ URL保存完了','success');
+  loadMasters();
+  loadApplicants();
+}
+function saveSecret() {
+  const s = document.getElementById('appSecret').value.trim();
+  try{localStorage.setItem('rcare_apt_secret', s)}catch(e){}
+  window._appSecret = s;
+  setStatus('gasStatus', s ? '✓ シークレットキー保存完了' : '✓ シークレットキーをクリア', 'success');
+}
+function loadGasUrl() {
+  try{
+    const u = localStorage.getItem('rcare_apt_gas_url');
+    if (u) { document.getElementById('gasUrl').value = u; window._gasUrl = u; }
+    const s = localStorage.getItem('rcare_apt_secret');
+    if (s) { document.getElementById('appSecret').value = s; window._appSecret = s; }
+  }catch(e){}
+}
+
+// ============================================
+// GAS API呼び出し（POST）
+// ============================================
+async function callGas(action, data = {}) {
+  if (!window._gasUrl) throw new Error('GAS URL未設定');
+  const payload = Object.assign({action}, data);
+  if (window._appSecret) payload.secret = window._appSecret;
+  const body = JSON.stringify(payload);
+  const res = await fetch(window._gasUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body
+  });
+  if (!res.ok) throw new Error('GAS応答エラー: '+res.status);
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'エラー発生');
+  return result;
+}
+
+// ============================================
+// セットアップ
+// ============================================
+async function setupSheets() {
+  if (!confirm('スプレッドシートに7シート（01_応募者〜07_マスター）を作成します。よろしいですか？')) return;
+  try{
+    setStatus('setupStatus','初期化中...','info');
+    const r = await callGas('setupSheets');
+    setStatus('setupStatus','✓ '+(r.message||'完了')+(r.created.length?' / 作成: '+r.created.join(', '):' / 既存シートあり、ヘッダー確認済み'),'success');
+    setTimeout(loadMasters, 500);
+  }catch(e){setStatus('setupStatus','エラー: '+e.message,'error')}
+}
+
+// ============================================
+// マスター取得
+// ============================================
+async function loadMasters() {
+  try{
+    const r = await callGas('getMasters');
+    masters = r.masters || {};
+    populateSelects();
+    setStatus('masterStatus','✓ マスター読込完了','success');
+  }catch(e){setStatus('masterStatus','マスター読込エラー: '+e.message,'error')}
+}
+function populateSelects() {
+  fillSelect('r_media', masters['媒体']);
+  fillSelect('r_job', masters['職種']);
+  fillSelect('r_employment', masters['雇用形態']);
+  fillSelect('r_qualification', masters['資格']);
+  fillSelect('f_media', masters['媒体'], '全媒体');
+  fillSelect('f_status', masters['ステータス'], '全ステータス');
+  fillSelect('f_job', masters['職種'], '全職種');
+  fillSelect('f_employment', masters['雇用形態'], '全雇用形態');
+  fillSelect('f_qualification', masters['資格'], '全資格');
+  fillSelect('sm_staff', masters['担当者']);
+}
+function fillSelect(id, items, allLabel) {
+  const el = document.getElementById(id); if (!el) return;
+  const cur = el.value;
+  el.innerHTML = (allLabel ? `<option value="">${allLabel}</option>` : '<option value="">選択</option>') +
+    (items||[]).map(i => `<option value="${esc(i)}">${esc(i)}</option>`).join('');
+  el.value = cur;
+}
+
+// ============================================
+// 応募者登録
+// ============================================
+async function registerApplicant() {
+  const name = document.getElementById('r_name').value.trim();
+  const media = document.getElementById('r_media').value;
+  const date = document.getElementById('r_date').value;
+  if (!name) { setStatus('r_status','氏名を入力してください','error'); return; }
+  if (!media) { setStatus('r_status','媒体を選択してください','error'); return; }
+  if (!date) { setStatus('r_status','応募日を入力してください','error'); return; }
+  const payload = {
+    応募日: date, 媒体: media, 求人ID: document.getElementById('r_jobid').value,
+    氏名: name, 電話番号: document.getElementById('r_phone').value,
+    メール: document.getElementById('r_email').value,
+    応募職種: document.getElementById('r_job').value,
+    雇用形態: document.getElementById('r_employment').value,
+    資格: document.getElementById('r_qualification').value,
+    経験年数: document.getElementById('r_experience').value,
+    希望勤務: document.getElementById('r_wish').value,
+    メモ: document.getElementById('r_memo').value
+  };
+  try{
+    setStatus('r_status','登録中...','info');
+    const r = await callGas('createApplicant', {payload});
+    setStatus('r_status',`✓ 登録完了（応募者ID: ${r.applicantId}）`,'success');
+    resetRegisterForm();
+    setTimeout(()=>loadApplicants(), 300);
+  }catch(e){setStatus('r_status','エラー: '+e.message,'error')}
+}
+function resetRegisterForm() {
+  ['r_name','r_phone','r_email','r_experience','r_wish','r_jobid','r_memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('r_date').value = new Date().toISOString().slice(0,10);
+}
+
+// ============================================
+// 応募者一覧
+// ============================================
+async function loadApplicants() {
+  try{
+    setStatus('listInfo','','info');
+    document.getElementById('listInfo').textContent = '読込中...';
+    const r = await callGas('getApplicants', {params:{limit:100}});
+    applicants = r.applicants || [];
+    renderList(applicants, r.total);
+  }catch(e){
+    document.getElementById('listContainer').innerHTML = `<div class="status error">エラー: ${esc(e.message)}</div>`;
+  }
+}
+function applyFilter() {
+  const f = {
+    name: document.getElementById('f_name').value.toLowerCase(),
+    media: document.getElementById('f_media').value,
+    status: document.getElementById('f_status').value,
+    job: document.getElementById('f_job').value,
+    employment: document.getElementById('f_employment').value,
+    qualification: document.getElementById('f_qualification').value,
+    dateFrom: document.getElementById('f_date_from').value,
+    dateTo: document.getElementById('f_date_to').value,
+    unhandled: document.getElementById('f_unhandled').checked,
+    interview: document.getElementById('f_interview').checked
+  };
+  let filtered = applicants.filter(a => {
+    if (f.name && !String(a['氏名']||'').toLowerCase().includes(f.name)) return false;
+    if (f.media && a['媒体'] !== f.media) return false;
+    if (f.status && a['ステータス'] !== f.status) return false;
+    if (f.job && a['応募職種'] !== f.job) return false;
+    if (f.employment && a['雇用形態'] !== f.employment) return false;
+    if (f.qualification && a['資格'] !== f.qualification) return false;
+    if (f.dateFrom && String(a['応募日']) < f.dateFrom) return false;
+    if (f.dateTo && String(a['応募日']) > f.dateTo) return false;
+    if (f.unhandled && a['ステータス'] !== '未対応') return false;
+    if (f.interview && !['面接予定','面接調整中'].includes(a['ステータス'])) return false;
+    return true;
+  });
+  renderList(filtered, applicants.length);
+}
+function renderList(list, total) {
+  document.getElementById('listInfo').textContent = `${list.length}件表示 / 全${total||list.length}件（直近100件まで取得）`;
+  if (list.length === 0) {
+    document.getElementById('listContainer').innerHTML = '<div class="empty">該当する応募者がいません</div>';
+    return;
+  }
+  const html = `<table class="list-table"><thead><tr>
+    <th>応募日</th><th>媒体</th><th>氏名</th><th>応募職種</th><th>雇用形態</th><th>資格</th><th>ステータス</th><th>次回対応日</th>
+    </tr></thead><tbody>${list.map(a=>`<tr onclick="openDetail('${esc(a['応募者ID'])}')">
+    <td data-label="応募日">${esc(fmtDate(a['応募日']))}</td>
+    <td data-label="媒体">${esc(a['媒体'])}</td>
+    <td data-label="氏名"><strong>${esc(a['氏名'])}</strong></td>
+    <td data-label="応募職種">${esc(a['応募職種'])}</td>
+    <td data-label="雇用形態">${esc(a['雇用形態'])}</td>
+    <td data-label="資格">${esc(a['資格'])}</td>
+    <td data-label="ステータス"><span class="badge s-${esc(a['ステータス']||'未対応')}">${esc(a['ステータス']||'—')}</span></td>
+    <td data-label="次回対応日">${esc(fmtDate(a['次回対応日']))}</td>
+    </tr>`).join('')}</tbody></table>`;
+  document.getElementById('listContainer').innerHTML = html;
+}
+
+// ============================================
+// 応募者詳細
+// ============================================
+async function openDetail(id) {
+  try{
+    document.getElementById('detailModal').classList.add('show');
+    document.getElementById('d_body').innerHTML = '<div class="empty">読込中...</div>';
+    const r = await callGas('getApplicantDetail', {applicantId:id});
+    currentDetail = r;
+    renderDetail(r);
+  }catch(e){
+    document.getElementById('d_body').innerHTML = `<div class="status error">エラー: ${esc(e.message)}</div>`;
+  }
+}
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('show');
+  currentDetail = null;
+}
+function renderDetail(r) {
+  const a = r.applicant;
+  document.getElementById('d_title').textContent = `${a['氏名']}（${a['応募者ID']}）`;
+  const statusBtns = ['電話した','メールした','SMSした','返信待ち','面接調整中','面接予定','面接済み','採用予定','採用','辞退','不採用','保留'];
+  const html = `<div class="detail-grid">
+    <div class="detail-block">
+      <h3>基本情報</h3>
+      ${detailRow('応募日', fmtDate(a['応募日']))}
+      ${detailRow('媒体', a['媒体'])}
+      ${detailRow('求人ID', a['求人ID'])}
+      ${detailRow('電話番号', a['電話番号'])}
+      ${detailRow('メール', a['メール'])}
+      ${detailRow('応募職種', a['応募職種'])}
+      ${detailRow('雇用形態', a['雇用形態'])}
+      ${detailRow('資格', a['資格'])}
+      ${detailRow('経験年数', a['経験年数'])}
+      ${detailRow('希望勤務', a['希望勤務'])}
+    </div>
+    <div class="detail-block">
+      <h3>ステータス・結果</h3>
+      ${detailRow('現在', `<span class="badge s-${esc(a['ステータス']||'未対応')}">${esc(a['ステータス']||'—')}</span>`)}
+      ${detailRow('次回対応日', fmtDate(a['次回対応日']))}
+      ${detailRow('最終結果', a['最終結果'])}
+      ${a['辞退理由']?detailRow('辞退理由', a['辞退理由']):''}
+      ${a['不採用理由']?detailRow('不採用理由', a['不採用理由']):''}
+      ${detailRow('登録日時', a['作成日時'])}
+      ${detailRow('更新日時', a['更新日時'])}
+    </div>
+    <div class="detail-block" style="grid-column:1/-1">
+      <h3>メモ</h3>
+      <div style="font-size:12px;white-space:pre-wrap">${esc(a['メモ']||'（メモなし）')}</div>
+    </div>
+    <div class="detail-block" style="grid-column:1/-1">
+      <h3>ステータス変更</h3>
+      <div class="status-actions">
+        ${statusBtns.map(s=>`<button class="status-btn" onclick="openStatusModal('${esc(a['応募者ID'])}','${esc(s)}')">${esc(s)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="detail-block" style="grid-column:1/-1">
+      <h3>対応履歴（${(r.histories||[]).length}件）</h3>
+      ${(r.histories||[]).length===0?'<div class="empty">履歴なし</div>':r.histories.map(h=>`
+        <div class="history-item">
+          <div class="history-head"><span><strong>${esc(h['対応種別']||'')}</strong> / ${esc(h['担当者']||'—')}</span><span>${esc(h['日時'])}</span></div>
+          <div class="history-content">${esc(h['対応内容']||'(内容なし)')}</div>
+          ${h['変更前ステータス']||h['変更後ステータス']?`<div class="history-status-change">${esc(h['変更前ステータス']||'—')} → <strong>${esc(h['変更後ステータス']||'—')}</strong></div>`:''}
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+  document.getElementById('d_body').innerHTML = html;
+}
+function detailRow(label, value) {
+  return `<div class="detail-row"><span class="l">${esc(label)}</span><span class="v">${value||'—'}</span></div>`;
+}
+
+// ============================================
+// ステータス変更モーダル
+// ============================================
+function openStatusModal(applicantId, newStatus) {
+  pendingStatusChange = {applicantId, newStatus};
+  document.getElementById('sm_title').textContent = `ステータスを「${newStatus}」に変更`;
+  document.getElementById('sm_note').value = '';
+  document.getElementById('sm_nextdate').value = '';
+  document.getElementById('statusModal').classList.add('show');
+}
+function closeStatusModal() {
+  document.getElementById('statusModal').classList.remove('show');
+  pendingStatusChange = null;
+}
+async function confirmStatusChange() {
+  if (!pendingStatusChange) return;
+  const {applicantId, newStatus} = pendingStatusChange;
+  const note = document.getElementById('sm_note').value;
+  const staff = document.getElementById('sm_staff').value;
+  const nextDate = document.getElementById('sm_nextdate').value;
+  try{
+    await callGas('changeStatus', {applicantId, newStatus, contactType:newStatus, note, staff, nextDate});
+    closeStatusModal();
+    // 詳細再読込
+    await openDetail(applicantId);
+    // 一覧も更新
+    loadApplicants();
+  }catch(e){alert('エラー: '+e.message)}
+}
+
+// ============================================
+// ユーティリティ
+// ============================================
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtDate(s){if(!s)return '';const d=String(s);if(d.length>=10)return d.slice(0,10);return d}
+function setStatus(id,m,t){const el=document.getElementById(id);if(el)el.innerHTML=`<div class="status ${t}">${m}</div>`}
+</script>
+
+</body>
+</html>
